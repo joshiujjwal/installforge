@@ -1,0 +1,123 @@
+id: flutter
+product: Flutter SDK
+description: >-
+  Install the Flutter SDK and configure the toolchain for building cross-platform
+  apps (including iOS builds from macOS). Verified with `flutter --version` and
+  `flutter doctor`.
+homepage: https://flutter.dev
+source_docs:
+  - https://docs.flutter.dev/get-started/install
+categories: [sdk, mobile, dart]
+recipe_version: "1.0.0"
+maintainers:
+  - installforge-core
+last_tested: "2026-05-20"
+
+targets:
+  - platform:
+      os: macos
+      arch: arm64
+      os_version: ">=13.0"
+    prerequisites:
+      - id: xcode-clt
+        description: Xcode Command Line Tools (git, clang) required for iOS builds
+        check: "xcode-select -p"
+        required: true
+      - id: homebrew
+        description: Homebrew package manager
+        check: "command -v brew"
+        install_recipe: homebrew
+        required: false
+    steps:
+      - id: install-flutter
+        description: Install Flutter via the Homebrew cask
+        run: "brew install --cask flutter"
+        expect:
+          run: "flutter --version"
+          expect_exit_code: 0
+          expect_stdout_contains: "Flutter"
+      - id: precache-ios
+        description: Pre-download iOS build artifacts
+        run: "flutter precache --ios"
+        idempotent: true
+    verify:
+      - description: Flutter reports a version
+        run: "flutter --version"
+        expect_exit_code: 0
+        expect_stdout_contains: "Flutter"
+      - description: flutter doctor runs without blocking errors
+        run: "flutter doctor"
+        expect_exit_code: 0
+    known_issues:
+      - id: cocoapods-missing
+        symptom: "flutter doctor reports CocoaPods not installed for iOS builds"
+        detect:
+          stdout_regex: "CocoaPods (not installed|installed but broken)"
+        cause: "iOS plugins require CocoaPods, which is not bundled with Flutter."
+        fix:
+          - id: install-cocoapods
+            description: Install CocoaPods via Homebrew
+            run: "brew install cocoapods"
+        source: https://docs.flutter.dev/get-started/install/macos
+        confidence: high
+      - id: rosetta-missing
+        symptom: "iOS tooling fails on Apple Silicon with 'bad CPU type' errors"
+        detect:
+          stderr_regex: "bad CPU type|Rosetta"
+        cause: "Some iOS toolchain binaries require Rosetta 2 on Apple Silicon."
+        fix:
+          - id: install-rosetta
+            description: Install Rosetta 2
+            run: "softwareupdate --install-rosetta --agree-to-license"
+            elevated: true
+        confidence: medium
+
+  - platform:
+      os: linux
+      arch: x86_64
+    prerequisites:
+      - id: base-tools
+        description: Base tooling (git, curl, unzip)
+        check: "command -v git && command -v curl && command -v unzip"
+        required: true
+    steps:
+      - id: install-snap
+        description: Install Flutter via snap (stable channel)
+        run: "sudo snap install flutter --classic"
+        elevated: true
+        expect:
+          run: "flutter --version"
+          expect_exit_code: 0
+          expect_stdout_contains: "Flutter"
+    verify:
+      - description: Flutter reports a version
+        run: "flutter --version"
+        expect_exit_code: 0
+        expect_stdout_contains: "Flutter"
+      - description: flutter doctor runs
+        run: "flutter doctor"
+        expect_exit_code: 0
+    known_issues:
+      - id: libglu-missing
+        symptom: "Linux build fails: cannot find -lGLU"
+        detect:
+          stderr_regex: "cannot find -lGLU|libGLU"
+        cause: "The Mesa GLU dev library is not installed."
+        fix:
+          - id: install-libglu
+            description: Install libglu via apt
+            run: "sudo apt-get update && sudo apt-get install -y libglu1-mesa"
+            elevated: true
+        source: https://docs.flutter.dev/get-started/install/linux
+        confidence: high
+      - id: snapd-missing
+        symptom: "snap: command not found"
+        detect:
+          stderr_regex: "snap: (command )?not found"
+        cause: "snapd is not installed on minimal/server distros."
+        fix:
+          - id: install-snapd
+            description: Install snapd
+            run: "sudo apt-get update && sudo apt-get install -y snapd"
+            elevated: true
+        confidence: medium

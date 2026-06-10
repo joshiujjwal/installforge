@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://installforge.dev/schemas/device-config.schema.json",
+  "title": "InstallForge DeviceConfig",
+  "description": "A snapshot of the target device, used to select a recipe target and plan execution.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["os", "arch"],
+  "properties": {
+    "os": { "enum": ["macos", "linux", "windows", "ios", "android"] },
+    "os_version": { "type": "string" },
+    "arch": { "enum": ["arm64", "x86_64", "universal", "any"] },
+    "package_managers": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Detected managers, e.g. ['brew', 'apt-get', 'flatpak']."
+    },
+    "shell": { "type": "string" },
+    "installed": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "Map of tool name to detected version, e.g. {'git': '2.45.0'}."
+    },
+    "constraints": {
+      "type": "array",
+      "items": { "enum": ["no-sudo", "offline", "metered-network", "corporate-proxy", "ci"] }
+    },
+    "env": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    }
+  }
+}

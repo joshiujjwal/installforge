@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://installforge.dev/schemas/recipe.schema.json",
+  "title": "InstallForge Recipe",
+  "description": "Curated, machine-runnable install knowledge for a product across one or more platform targets.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "product", "description", "recipe_version", "targets"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "description": "Stable slug and folder name, e.g. 'flutter'."
+    },
+    "product": { "type": "string", "minLength": 1 },
+    "description": { "type": "string", "minLength": 1 },
+    "homepage": { "type": "string", "format": "uri" },
+    "source_docs": { "type": "array", "items": { "type": "string", "format": "uri" } },
+    "categories": { "type": "array", "items": { "type": "string" } },
+    "recipe_version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "maintainers": { "type": "array", "items": { "type": "string" } },
+    "last_tested": { "type": "string", "format": "date" },
+    "targets": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/target" } }
+  },
+  "$defs": {
+    "platform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["os", "arch"],
+      "properties": {
+        "os": { "enum": ["macos", "linux", "windows", "ios", "android"] },
+        "arch": { "enum": ["arm64", "x86_64", "universal", "any"] },
+        "os_version": {
+          "type": "string",
+          "description": "Free-form constraint, e.g. '>=13.0' or 'ubuntu>=22.04'."
+        }
+      }
+    },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["run"],
+      "description": "A command whose result proves an expectation (used for step expectations and verification).",
+      "properties": {
+        "description": { "type": "string" },
+        "run": { "type": "string", "minLength": 1 },
+        "shell": { "type": "string" },
+        "expect_exit_code": { "type": "integer", "default": 0 },
+        "expect_stdout_contains": { "type": "string" },
+        "expect_stdout_regex": { "type": "string" }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "description", "run"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+        "description": { "type": "string", "minLength": 1 },
+        "run": { "type": "string", "minLength": 1 },
+        "shell": { "type": "string" },
+        "expect": { "$ref": "#/$defs/check" },
+        "timeout_seconds": { "type": "integer", "minimum": 1 },
+        "elevated": { "type": "boolean", "default": false },
+        "idempotent": { "type": "boolean", "default": true }
+      }
+    },
+    "prerequisite": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "description", "check"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+        "description": { "type": "string", "minLength": 1 },
+        "check": { "type": "string", "minLength": 1, "description": "Command that succeeds (exit 0) when the prerequisite is satisfied." },
+        "install_recipe": { "type": "string", "description": "Recipe id the agent can run to satisfy this prerequisite." },
+        "required": { "type": "boolean", "default": true }
+      }
+    },
+    "detect": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "description": "How to recognise a known issue from a failed step's output.",
+      "properties": {
+        "stdout_regex": { "type": "string" },
+        "stderr_regex": { "type": "string" },
+        "exit_code": { "type": "integer" }
+      }
+    },
+    "known_issue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "symptom", "detect", "cause", "fix"],
+      "description": "A curated troubleshooting entry (TSG): symptom -> detection -> cause -> fix steps.",
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+        "symptom": { "type": "string", "minLength": 1 },
+        "detect": { "$ref": "#/$defs/detect" },
+        "cause": { "type": "string" },
+        "fix": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/step" } },
+        "source": { "type": "string", "format": "uri" },
+        "confidence": { "enum": ["low", "medium", "high"] }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["platform", "steps", "verify"],
+      "properties": {
+        "platform": { "$ref": "#/$defs/platform" },
+        "prerequisites": { "type": "array", "items": { "$ref": "#/$defs/prerequisite" } },
+        "steps": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/step" } },
+        "verify": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/check" },
+          "description": "Evidence gate: at least one check that proves the install works on the device."
+        },
+        "known_issues": { "type": "array", "items": { "$ref": "#/$defs/known_issue" } }
+      }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "installforge",
+  "private": true,
+  "version": "0.0.1",
+  "description": "A marketplace of curated install recipes + a skill-agent that installs and verifies any product on any device.",
+  "scripts": {
+    "web:dev": "pnpm --filter @installforge/web dev",
+    "web:test": "pnpm --filter @installforge/web test",
+    "web:build": "pnpm --filter @installforge/web build",
+    "web:lint": "pnpm --filter @installforge/web lint"
+  },
+  "packageManager": "pnpm@10.28.1"
+}

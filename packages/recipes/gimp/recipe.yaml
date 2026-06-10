@@ -1,0 +1,61 @@
+id: gimp
+product: GIMP
+description: >-
+  Install the GIMP image editor on Linux. Prefers the distro package, with a
+  Flatpak fallback for a newer release. Verified with `gimp --version`.
+homepage: https://www.gimp.org
+source_docs:
+  - https://www.gimp.org/downloads/
+categories: [graphics, desktop]
+recipe_version: "1.0.0"
+maintainers:
+  - installforge-core
+last_tested: "2026-05-18"
+
+targets:
+  - platform:
+      os: linux
+      arch: x86_64
+      os_version: "ubuntu>=22.04"
+    prerequisites:
+      - id: apt
+        description: APT package manager
+        check: "command -v apt-get"
+        required: true
+    steps:
+      - id: apt-install-gimp
+        description: Install GIMP from the Ubuntu repositories
+        run: "sudo apt-get update && sudo apt-get install -y gimp"
+        elevated: true
+        expect:
+          run: "gimp --version"
+          expect_exit_code: 0
+          expect_stdout_contains: "GNU Image Manipulation Program"
+    verify:
+      - description: GIMP reports a version
+        run: "gimp --version"
+        expect_exit_code: 0
+        expect_stdout_contains: "GNU Image Manipulation Program"
+    known_issues:
+      - id: outdated-apt-version
+        symptom: "Installed GIMP is older than desired (2.10 when 3.x wanted)"
+        detect:
+          stdout_regex: "2\\.10"
+        cause: "Distro repositories ship an older stable GIMP."
+        fix:
+          - id: install-flatpak-gimp
+            description: Install a newer GIMP from Flathub via Flatpak
+            run: "flatpak install -y flathub org.gimp.GIMP"
+        source: https://www.gimp.org/downloads/
+        confidence: medium
+      - id: flathub-remote-missing
+        symptom: "error: Remote flathub not found"
+        detect:
+          stderr_regex: "Remote flathub not found"
+        cause: "The Flathub remote has not been added to Flatpak."
+        fix:
+          - id: add-flathub
+            description: Add the Flathub remote
+            run: "flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo"
+            elevated: true
+        confidence: high

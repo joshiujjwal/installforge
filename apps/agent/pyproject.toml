@@ -1,0 +1,45 @@
+[project]
+name = "installforge-agent"
+version = "0.0.1"
+description = "InstallForge skill-agent: installs and verifies products on a device using curated recipes."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "pydantic>=2.5",
+    "pyyaml>=6.0",
+    "typer>=0.9",
+    "httpx>=0.26",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "ruff>=0.4",
+    "mypy>=1.8",
+    "types-PyYAML>=6.0",
+]
+
+[project.scripts]
+installforge = "installforge_agent.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/installforge_agent"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B"]
+
+[tool.mypy]
+python_version = "3.9"
+strict = true
